@@ -31,18 +31,20 @@ func initDB() {
 	config := mysql.Config{
 		User:                 "power",
 		Passwd:               "a909958300a",
-		Addr:                 "rm-bp1rk2eo81o6a8nn8po.mysql.rds.aliyuncs.com",
-		DBName:               "aws",
+		Addr:                 "rm-bp1rk2eo81o6a8nn8po.mysql.rds.aliyuncs.com:3306",
+		Net:                  "tcp",
+		DBName:               "test2",
 		AllowNativePasswords: true,
 	}
 
 	db, err = sql.Open("mysql", config.FormatDSN())
+	fmt.Println(config.FormatDSN())
 	checkError(err)
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(5 * time.Minute)
-	//err = db.Ping()
-	//checkError(err)
+	err = db.Ping()
+	checkError(err)
 }
 func checkError(err error) {
 	if err != nil {
@@ -50,6 +52,13 @@ func checkError(err error) {
 	}
 
 }
+
+func createTables() {
+	createArticlesSQL := `CREATE TABLE IF NOT EXISTS articles(ID bigint(20) PRIMARY KEY AUTO_INCREMENT NOT NULL,title varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,body longtext COLLATE utf8mb3_unicode_ci);`
+	_, err := db.Exec(createArticlesSQL)
+	checkError(err)
+}
+
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "<h1>Hello, 欢迎来到 goblog！</h1>")
 }
@@ -152,6 +161,7 @@ func removeTrailingSlash(next http.Handler) http.Handler {
 }
 func main() {
 	initDB()
+	createTables()
 	router.HandleFunc("/", homeHandler).Methods("GET").Name("home")
 	router.HandleFunc("/about", aboutHandler).Methods("GET").Name("about")
 	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("articles.show")
