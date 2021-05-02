@@ -90,11 +90,6 @@ func (a Article) Link() string {
 	return showURL.String()
 }
 
-func getRouteVarible(parameterName string, r *http.Request) string {
-	vars := mux.Vars(r)
-	return vars[parameterName]
-}
-
 func getArticleByID(id string) (Article, error) {
 
 	article := Article{}
@@ -104,7 +99,7 @@ func getArticleByID(id string) (Article, error) {
 
 }
 func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
-	id := getRouteVarible("id", r)
+	id := route.GetRouteVarible("id", r)
 	article, err := getArticleByID(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -245,7 +240,7 @@ func removeTrailingSlash(next http.Handler) http.Handler {
 }
 
 func articlesEditHandler(w http.ResponseWriter, r *http.Request) {
-	id := getRouteVarible("id", r)
+	id := route.GetRouteVarible("id", r)
 	article, err := getArticleByID(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -288,7 +283,7 @@ func validateArticleFormDate(title string, body string) map[string]string {
 }
 
 func articlesUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	id := getRouteVarible("id", r)
+	id := route.GetRouteVarible("id", r)
 	_, err := getArticleByID(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -336,7 +331,7 @@ func articlesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func articlesDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	id := getRouteVarible("id", r)
+	id := route.GetRouteVarible("id", r)
 
 	article, err := getArticleByID(id)
 	if err != nil {
