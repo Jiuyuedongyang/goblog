@@ -142,3 +142,82 @@ func (*ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
 		tmpl.Execute(w, data)
 	}
 }
+
+func (*ArticlesController) Edit(w http.ResponseWriter, r *http.Request) {
+	id := route.GetRouteVariable("id", r)
+	article, err := article.Get(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "404 文章未找到")
+		} else {
+			logger.LogError(err)
+			w.WriteHeader(500)
+			fmt.Fprint(w, "服务器内部错误")
+		}
+	} else {
+		updateURL := route.Name2URL("articles.update", "id", id)
+		data := ArticlesFormData{
+			Title:  article.Title,
+			Body:   article.Body,
+			URL:    updateURL,
+			Errors: nil,
+		}
+		tmpl, err := template.ParseFiles("resources/views/articles/edit.gohtml")
+		logger.LogError(err)
+		tmpl.Execute(w, data)
+	}
+
+}
+
+func (*ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
+	id := route.GetRouteVariable("id", r)
+	_article, err := article.Get(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			w.WriteHeader(404)
+			fmt.Fprint(w, "文章未找到")
+		} else {
+			logger.LogError(err)
+			w.WriteHeader(500)
+			fmt.Fprint(w, "500服务器内部错误")
+		}
+	} else {
+		title := r.PostFormValue("title")
+		body := r.PostFormValue("body")
+		errors := validateArticleFormData(title, body)
+		if len(errors) == 0 {
+			// 4.2 表单验证通过，更新数据
+			_article.Title = title
+			_article.Body = body
+
+			rowsAffected, err := _article.Update()
+			if err != nil {
+				// 数据库错误
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, "500 服务器内部错误")
+				return
+			}
+			if rowsAffected > 0 {
+				showURL := route.Name2URL("articles.show", "id", id)
+				http.Redirect(w, r, showURL, http.StatusFound)
+			} else {
+				fmt.Fprint(w, "您没有做任何更改")
+			}
+		} else {
+			updateURL := route.Name2URL("articles.update", "id", id)
+			data := ArticlesFormData{
+				Title:  title,
+				Body:   body,
+				URL:    updateURL,
+				Errors: errors,
+			}
+
+			tmpl, err := template.ParseFiles("resources/views/articles/edit.gohtml")
+			logger.LogError(err)
+			tmpl.Execute(w, data)
+		}
+
+	}
+
+}
