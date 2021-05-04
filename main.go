@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"goblog/app/http/middlewares"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -10,7 +11,6 @@ import (
 
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 var db *sql.DB
@@ -44,22 +44,6 @@ type Article struct {
 	ID          int64
 }
 
-func forceHTMLMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html;charset=utf-8")
-		next.ServeHTTP(w, r)
-	})
-}
-
-func removeTrailingSlash(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			r.URL.Path = strings.TrimSuffix(r.URL.Path, "/")
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 //
 //func (a Article) Delete() (rowsAffected int64, err error) {
 //	rs, err := db.Exec("delete from articles where id = " + strconv.FormatInt(a.ID, 10))
@@ -84,8 +68,5 @@ func main() {
 	bootstrap.SetupDB()
 	router = bootstrap.SetupRoute()
 
-	// 中间件：强制内容类型为 HTML
-	router.Use(forceHTMLMiddleware)
-
-	http.ListenAndServe(":3000", removeTrailingSlash(router))
+	http.ListenAndServe(":3000", middlewares.RemoveTrailingSlash(router))
 }
