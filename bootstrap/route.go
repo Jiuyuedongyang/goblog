@@ -6,6 +6,8 @@ import (
 	"goblog/routes"
 )
 
+var router *mux.Router
+
 func SetupRoute() *mux.Router {
 	router := mux.NewRouter()
 	routes.RegisterWebRoutes(router)
