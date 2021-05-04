@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"database/sql"
 	"fmt"
 	article "goblog/app/models/article"
 	"goblog/pkg/logger"
@@ -216,6 +217,39 @@ func (*ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
 			tmpl, err := template.ParseFiles("resources/views/articles/edit.gohtml")
 			logger.LogError(err)
 			tmpl.Execute(w, data)
+		}
+
+	}
+
+}
+
+func (*ArticlesController) Delete(w http.ResponseWriter, r *http.Request) {
+	id := route.GetRouteVariable("id", r)
+
+	_article, err := article.Get(id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(404)
+			fmt.Fprint(w, "40文章未找到")
+		} else {
+			logger.LogError(err)
+			w.WriteHeader(500)
+			fmt.Fprint(w, "500服务器内部错误")
+		}
+	} else {
+		rowsAffected, err := _article.Delete()
+		if err != nil {
+			logger.LogError(err)
+			w.WriteHeader(500)
+			fmt.Fprint(w, "500服务器内部错误")
+		} else {
+			if rowsAffected > 0 {
+				indexURL := route.Name2URL("articles.index")
+				http.Redirect(w, r, indexURL, http.StatusFound)
+			} else {
+				w.WriteHeader(440)
+				fmt.Fprint(w, "文章未找到")
+			}
 		}
 
 	}
